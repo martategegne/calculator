@@ -1,0 +1,644 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #e9b8f5;
+    padding: 20px;
+    overflow-x: hidden;
+}
+
+.calculator {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 40px;
+    padding: clamp(15px, 4vw, 25px); /* Responsive padding */
+    width: min(95vw, 360px); /* Responsive width */
+    max-width: 360px;
+    min-width: 280px; /* Minimum width for very small screens */
+    box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.1),
+        0 5px 15px rgba(0, 0, 0, 0.07);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin: auto;
+}
+
+.display {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 60px;
+    padding: clamp(15px, 5vw, 25px) clamp(20px, 6vw, 40px);
+    margin-bottom: clamp(15px, 4vw, 25px);
+    text-align: right;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    min-height: clamp(90px, 20vh, 120px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    backdrop-filter: blur(5px);
+    box-shadow: 15px 15px 30px #bebebe, -15px -15px 30px #ffffff;
+    overflow: hidden;
+}
+
+@supports (-webkit-backdrop-filter: blur(5px)) or (backdrop-filter: blur(5px)) {
+    .display {
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+    }
+}
+
+.previous-operand {
+    color: #666;
+    font-size: clamp(0.9rem, 3vw, 1.1rem);
+    min-height: 20px;
+    word-wrap: break-word;
+    font-weight: 400;
+    opacity: 0.8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.current-operand {
+    color: #333;
+    font-size: clamp(2rem, 8vw, 3rem);
+    font-weight: 300;
+    min-height: 40px;
+    word-wrap: break-word;
+    letter-spacing: 0.5px;
+    border-radius: 45px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(10px, 3vw, 15px);
+}
+
+button {
+    border: none;
+    height: clamp(55px, 15vw, 70px);
+    width: clamp(55px, 15vw, 70px);
+    font-size: clamp(1.2rem, 4vw, 1.5rem);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-user-select: none;
+    position: relative;
+    overflow: hidden;
+    font-weight: 400;
+    border-radius: 50%;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.08),
+        0 2px 4px rgba(0, 0, 0, 0.05);
+    aspect-ratio: 1 / 1; /* Ensures perfect circle on all sizes */
+}
+
+button:active {
+    transform: translateY(2px) scale(0.98);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* ALL BUTTONS HAVE BLACK TEXT */
+button {
+    color: #000000;
+}
+
+/* Number buttons - WHITE CIRCLE */
+.number {
+    background: white;
+}
+
+.number:hover {
+    background: #f8f8f8;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Operator buttons - WHITE CIRCLE */
+.operator {
+    background: white;
+    font-weight: 600;
+}
+
+.operator:hover {
+    background: #f8f8f8;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Equals button - RECTANGULAR ROUNDED PINK */
+.equals {
+    background: #F2A8C0;
+    color: white;
+    border-radius: 30px;
+    height: clamp(55px, 15vw, 70px);
+    width: auto;
+    justify-self: stretch;
+    margin-right: 0;
+    font-weight: 600;
+    border: none;
+    box-shadow: 
+        0 4px 10px rgba(255, 107, 107, 0.3),
+        0 2px 5px rgba(255, 107, 107, 0.2);
+    grid-column: span 2;
+    aspect-ratio: auto; /* Override circle aspect ratio */
+}
+
+.equals:hover {
+    background: #1cb608;
+    box-shadow: 
+        0 6px 15px rgba(255, 107, 107, 0.4),
+        0 3px 8px rgba(255, 107, 107, 0.3);
+}
+
+.equals:active {
+    transform: translateY(2px) scale(0.98);
+    box-shadow: 
+        0 2px 5px rgba(255, 107, 107, 0.3),
+        0 1px 3px rgba(255, 107, 107, 0.2);
+}
+
+/* Clear buttons - WHITE CIRCLE */
+.clear {
+    background: white;
+}
+
+.clear:hover {
+    background: #f8f8f8;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* DEL button (span-two) - WHITE RECTANGULAR */
+button.clear.span-two {
+    background: white;
+    font-weight: 600;
+    width: auto;
+    border-radius: 50px;
+    grid-column: span 2;
+    height: clamp(55px, 15vw, 70px);
+    aspect-ratio: auto; /* Override circle aspect ratio */
+}
+
+button.clear.span-two:hover {
+    background: #f8f8f8;
+}
+
+/* First clear button (clr) - WHITE CIRCLE */
+button.clear:first-child {
+    background: white;
+}
+
+button.clear:first-child:hover {
+    background: #f8f8f8;
+}
+
+/* Decimal button - WHITE CIRCLE */
+.decimal {
+    background: white;
+}
+
+.decimal:hover {
+    background: #f8f8f8;
+}
+
+/* Button grid positioning */
+.buttons-grid {
+    grid-template-areas:
+        "clr del percent divide"
+        "seven eight nine multiply"
+        "four five six subtract"
+        "one two three add"
+        "decimal zero equals equals";
+}
+
+/* Position each button in the grid */
+button.clear:first-child { grid-area: clr; }
+button.clear.span-two { grid-area: del; }
+button.operator:nth-child(3) { grid-area: percent; }
+button.operator:nth-child(4) { grid-area: divide; }
+button.number:nth-child(5) { grid-area: seven; }
+button.number:nth-child(6) { grid-area: eight; }
+button.number:nth-child(7) { grid-area: nine; }
+button.operator:nth-child(8) { grid-area: multiply; }
+button.number:nth-child(9) { grid-area: four; }
+button.number:nth-child(10) { grid-area: five; }
+button.number:nth-child(11) { grid-area: six; }
+button.operator:nth-child(12) { grid-area: subtract; }
+button.number:nth-child(13) { grid-area: one; }
+button.number:nth-child(14) { grid-area: two; }
+button.number:nth-child(15) { grid-area: three; }
+button.operator:nth-child(16) { grid-area: add; }
+button.decimal { grid-area: decimal; }
+button.number:nth-child(18) { grid-area: zero; }
+button.equals { grid-area: equals; }
+
+/* 
+   RESPONSIVE BREAKPOINTS
+    */
+
+/* Galaxy Z Fold 5 and similar narrow tall screens (344px wide) */
+@media (max-width: 400px) and (max-height: 900px) {
+    body {
+        padding: 10px;
+    }
+    
+    .calculator {
+        width: 92vw;
+        max-width: 340px;
+        border-radius: 30px;
+        padding: 15px;
+    }
+    
+    .display {
+        border-radius: 40px;
+        padding: 15px 20px;
+        min-height: 80px;
+        margin-bottom: 15px;
+    }
+    
+    .current-operand {
+        font-size: 2.2rem;
+        min-height: 35px;
+    }
+    
+    .previous-operand {
+        font-size: 0.9rem;
+        min-height: 18px;
+    }
+    
+    button {
+        height: 60px;
+        width: 60px;
+        font-size: 1.3rem;
+    }
+    
+    .equals, button.clear.span-two {
+        height: 60px;
+        font-size: 1.3rem;
+    }
+    
+    .buttons-grid {
+        gap: 12px;
+    }
+}
+
+/* Extra small phones (under 320px wide) */
+@media (max-width: 320px) {
+    .calculator {
+        width: 95vw;
+        padding: 12px;
+        border-radius: 25px;
+    }
+    
+    .display {
+        padding: 12px 16px;
+        border-radius: 35px;
+        min-height: 70px;
+    }
+    
+    .current-operand {
+        font-size: 1.9rem;
+    }
+    
+    button {
+        height: 52px;
+        width: 52px;
+        font-size: 1.2rem;
+    }
+    
+    .equals, button.clear.span-two {
+        height: 52px;
+        font-size: 1.2rem;
+    }
+    
+    .buttons-grid {
+        gap: 10px;
+    }
+}
+
+/* Small tablets and landscape phones (400px - 600px) */
+@media (min-width: 401px) and (max-width: 600px) {
+    .calculator {
+        width: 380px;
+        max-width: 90vw;
+    }
+    
+    .display {
+        min-height: 100px;
+    }
+    
+    .current-operand {
+        font-size: 2.7rem;
+    }
+}
+
+/* Tablets (600px - 768px) */
+@media (min-width: 601px) and (max-width: 768px) {
+    .calculator {
+        width: 400px;
+    }
+    
+    .display {
+        min-height: 110px;
+    }
+    
+    .current-operand {
+        font-size: 2.9rem;
+    }
+    
+    button {
+        height: 65px;
+        width: 65px;
+        font-size: 1.4rem;
+    }
+    
+    .equals, button.clear.span-two {
+        height: 65px;
+    }
+}
+
+/* Desktop and large tablets (769px and up) */
+@media (min-width: 769px) {
+    .calculator {
+        width: 360px;
+    }
+    
+    .display {
+        min-height: 120px;
+    }
+    
+    .current-operand {
+        font-size: 3rem;
+    }
+}
+
+/* Tall screens (like Galaxy Z Fold 5 unfolded) */
+@media (min-height: 800px) and (max-width: 600px) {
+    body {
+        padding: 30px 20px;
+    }
+    
+    .calculator {
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+    
+    .display {
+        min-height: 100px;
+    }
+    
+    button {
+        height: 65px;
+        width: 65px;
+        font-size: 1.4rem;
+    }
+    
+    .equals, button.clear.span-two {
+        height: 65px;
+    }
+}
+
+/* Ultra-wide screens (for desktop users) */
+@media (min-width: 1200px) {
+    .calculator {
+        transform: scale(1.05);
+    }
+}
+
+/* High DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .calculator {
+        border-width: 0.5px;
+    }
+    
+    button {
+        border-width: 0.5px;
+    }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #1a1a1a;
+    }
+    
+    .calculator {
+        background: rgba(40, 40, 40, 0.95);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .display {
+        background: rgba(30, 30, 30, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .current-operand {
+        color: #ffffff;
+    }
+    
+    .previous-operand {
+        color: #aaaaaa;
+    }
+    
+    button {
+        background: #2a2a2a;
+        color: #ffffff;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    button:hover {
+        background: #3a3a3a;
+    }
+    
+    .number, .operator, .clear, .decimal {
+        background: #2a2a2a;
+        color: #ffffff;
+    }
+    
+    .number:hover, .operator:hover, .clear:hover, .decimal:hover {
+        background: #3a3a3a;
+    }
+    
+    .equals {
+        background: #F2A8C0;
+        color: white;
+    }
+}
+
+/* Portrait orientation adjustments */
+@media (orientation: portrait) and (max-height: 700px) {
+    body {
+        padding: 10px;
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+    
+    .calculator {
+        width: 95vw;
+        max-width: 320px;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+    body {
+        padding: 10px;
+        align-items: flex-start;
+        padding-top: 10px;
+    }
+    
+    .calculator {
+        width: auto;
+        max-width: 90vw;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+    
+    .display {
+        flex: 1;
+        min-height: 80px;
+    }
+    
+    .buttons-grid {
+        flex: 2;
+    }
+    
+    button {
+        height: 50px;
+        width: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .equals, button.clear.span-two {
+        height: 50px;
+    }
+}
+
+/* Button press animation */
+@keyframes buttonPress {
+    0% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(2px) scale(0.98); }
+    100% { transform: translateY(0) scale(1); }
+}
+
+button:active {
+    animation: buttonPress 0.15s ease;
+}
+
+/* Display text animation */
+@keyframes textUpdate {
+    0% { opacity: 0.5; transform: translateY(5px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.previous-operand, .current-operand {
+    animation: textUpdate 0.2s ease;
+}
+
+/* Button ripple effect */
+button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+}
+
+button:focus:not(:active)::after {
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(20, 20);
+        opacity: 0;
+    }
+}
+
+/* Special for equals button ripple */
+.equals::after {
+    background: rgba(255, 255, 255, 0.7);
+}
+
+/* Loading animation */
+.calculator {
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    button:hover {
+        background: inherit;
+    }
+    
+    button:active {
+        background: #f0f0f0;
+    }
+    
+    .equals:active {
+        background: #1cb608;
+    }
+    
+    /* Larger tap targets for mobile */
+    button {
+        min-height: 44px; /* Apple's minimum touch target size */
+    }
+}
+
+/* Prevent text selection on buttons */
+button {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+/* Smooth scrolling for mobile */
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+        padding-top: max(20px, env(safe-area-inset-top));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+}
