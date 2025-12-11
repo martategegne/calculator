@@ -431,7 +431,7 @@ button.equals { grid-area: equals; }
 }
 
 /* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
     body {
         background: #1a1a1a;
     }
@@ -477,7 +477,7 @@ button.equals { grid-area: equals; }
         background: #F2A8C0;
         color: white;
     }
-}
+} */
 
 /* Portrait orientation adjustments */
 @media (orientation: portrait) and (max-height: 700px) {
