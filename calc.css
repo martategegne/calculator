@@ -154,7 +154,7 @@ button {
     box-shadow: 
         0 4px 10px rgba(255, 107, 107, 0.3),
         0 2px 5px rgba(255, 107, 107, 0.2);
-    grid-column: span 2;
+   
     aspect-ratio: auto; /* Override circle aspect ratio */
 }
 
