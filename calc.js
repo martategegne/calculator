@@ -387,6 +387,26 @@ function performCalculation() {
             return currentValue;
     }
 }
+//added number formatting for display
+function formatDisplay(value) {
+    if (value === 'Error') return value;
+    
+    const num = parseFloat(value);
+    if (isNaN(num)) return value;
+    
+    // Limit to 10 digits for display
+    if (value.length > 10) {
+        if (Math.abs(num) > 9999999999) {
+            return num.toExponential(5);
+        }
+        return parseFloat(num.toPrecision(10)).toString();
+    }
+    
+    return value;
+}
+
+// Update updateDisplay():
+currentOperand.textContent = formatDisplay(calculator.displayValue);
 
 // Memory function
 function handleMemoryFunction() {
