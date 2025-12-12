@@ -277,6 +277,8 @@ function inputOperator(op) {
 
 // Input decimal
 function inputDecimal() {
+    if (calculator.errorState) return;
+    
     if (calculator.waitingForNewValue) {
         calculator.displayValue = '0.';
         calculator.waitingForNewValue = false;
