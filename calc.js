@@ -88,18 +88,7 @@ function loadFromStorage() {
     }
 }
 
-//save it to the local storage
-// saveToStorage() 
-function saveToStorage() {
-    if (!isLocalStorageAvailable()) return;
-    
-    try {
-        localStorage.setItem('calculator_memory', calculator.memory.toString());
-        console.log('💾 Saved memory:', calculator.memory);
-    } catch (error) {
-        console.warn('⚠️ Error saving to localStorage:', error);
-    }
-}
+
 
 // Update display
 function updateDisplay() {
@@ -188,7 +177,6 @@ function setupEventListeners() {
                     calculate();
                     break;
             }
-
             
             // Button animation
             button.style.transform = 'scale(0.95)';
@@ -230,9 +218,6 @@ function setupKeyboardSupport() {
 
 // Input number
 function inputNumber(number) {
-    if (calculator.errorState) {
-        clearCalculator();
-    }
     if (calculator.waitingForNewValue) {
         calculator.displayValue = number;
         calculator.waitingForNewValue = false;
@@ -253,17 +238,10 @@ function inputOperator(op) {
     const inputValue = parseFloat(calculator.displayValue);
     
     if (op === '%') {
-    if (calculator.operation && calculator.previousValue !== null) {
-        // For operations like: 100 + 50%
-        const percentValue = calculator.previousValue * (inputValue / 100);
-        calculator.displayValue = percentValue.toString();
-    } else {
-        // Standalone percentage: 50% → 0.5
         calculator.displayValue = (inputValue / 100).toString();
+        updateDisplay();
+        return;
     }
-    updateDisplay();
-    return;
-}
     
     if (calculator.previousValue === null) {
         calculator.previousValue = inputValue;
@@ -280,8 +258,6 @@ function inputOperator(op) {
 
 // Input decimal
 function inputDecimal() {
-    if (calculator.errorState) return;
-    
     if (calculator.waitingForNewValue) {
         calculator.displayValue = '0.';
         calculator.waitingForNewValue = false;
@@ -392,26 +368,6 @@ function performCalculation() {
             return currentValue;
     }
 }
-//added number formatting for display
-function formatDisplay(value) {
-    if (value === 'Error') return value;
-    
-    const num = parseFloat(value);
-    if (isNaN(num)) return value;
-    
-    // Limit to 10 digits for display
-    if (value.length > 10) {
-        if (Math.abs(num) > 9999999999) {
-            return num.toExponential(5);
-        }
-        return parseFloat(num.toPrecision(10)).toString();
-    }
-    
-    return value;
-}
-
-// Update updateDisplay():
-currentOperand.textContent = formatDisplay(calculator.displayValue);
 
 // Memory function
 function handleMemoryFunction() {
