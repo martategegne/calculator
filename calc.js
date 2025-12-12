@@ -1,5 +1,5 @@
 /**
- * Enhanced Calculator - Without Theme Switching
+ * Enhanced Calculator - With BODMAS/PEMDAS Support
  * @author Marta Tegegne Mamo
  */
 
@@ -11,14 +11,25 @@ const calculator = {
     waitingForNewValue: false,
     errorState: false,
     memory: 0,
-    // theme: 'light', // DISABLED: Theme feature
-    lastCalculationTime: 0
+    lastCalculationTime: 0,
+    // Store expression for BODMAS
+    expression: [],
+    shouldCalculate: false
 };
 
 // DOM Elements
 const currentOperand = document.querySelector('.current-operand');
 const previousOperand = document.querySelector('.previous-operand');
 const buttons = document.querySelectorAll('button');
+
+// Operator precedence (BODMAS/PEMDAS)
+const PRECEDENCE = {
+    '+': 1,
+    '-': 1,
+    '×': 2,
+    '/': 2,
+    '%': 3
+};
 
 // Initialize calculator
 function init() {
@@ -34,24 +45,19 @@ function init() {
         // Add event listeners
         setupEventListeners();
         
-        // DISABLED: Theme toggle button
-        // createThemeToggle();
-        
         // Setup keyboard support
         setupKeyboardSupport();
         
         // Setup test functions in console
         setupTestFunctions();
         
-        console.log('✅ Calculator ready with memory functions');
+        console.log('✅ Calculator ready with BODMAS support');
         
     } catch (error) {
         console.error('❌ Initialization error:', error);
     }
-}     
-/*   new local storage function
+}
 
-*/
 // Check if localStorage is available
 const isLocalStorageAvailable = () => {
     try {
@@ -64,44 +70,81 @@ const isLocalStorageAvailable = () => {
     }
 };
 
-// Load data from localStorage with fallback
+// Load data from localStorage
 function loadFromStorage() {
     if (!isLocalStorageAvailable()) {
-        console.warn('⚠️ localStorage not available - using session memory only');
+        console.warn('⚠️ localStorage not available');
         calculator.memory = 0;
         return;
     }
     
     try {
         const savedMemory = localStorage.getItem('calculator_memory');
-        
         if (savedMemory) {
             calculator.memory = parseFloat(savedMemory);
-            console.log('📂 Loaded memory from localStorage:', calculator.memory);
-        } else {
-            calculator.memory = 0;
+            console.log('📂 Loaded memory:', calculator.memory);
         }
-        
     } catch (error) {
-        console.warn('⚠️ Error loading from localStorage:', error);
-        calculator.memory = 0;
+        console.warn('⚠️ Error loading:', error);
     }
 }
 
-
+// Save to localStorage
+function saveToStorage() {
+    if (!isLocalStorageAvailable()) return;
+    
+    try {
+        localStorage.setItem('calculator_memory', calculator.memory.toString());
+        console.log('💾 Saved memory:', calculator.memory);
+    } catch (error) {
+        console.warn('⚠️ Error saving:', error);
+    }
+}
 
 // Update display
 function updateDisplay() {
-    currentOperand.textContent = calculator.displayValue;
-    previousOperand.textContent = calculator.previousValue 
-        ? `${calculator.previousValue} ${getOperatorSymbol(calculator.operation)}` 
-        : '';
+    // Format display value
+    currentOperand.textContent = formatDisplay(calculator.displayValue);
     
-    // Add animation
+    // Show expression for BODMAS
+    let displayExpr = '';
+    if (calculator.expression.length > 0) {
+        displayExpr = calculator.expression.map(item => 
+            typeof item === 'number' ? formatDisplay(item.toString()) : item
+        ).join(' ');
+    }
+    previousOperand.textContent = displayExpr || '';
+    
+    // Animation
     currentOperand.style.animation = 'none';
     setTimeout(() => {
         currentOperand.style.animation = 'pulse 0.3s';
     }, 10);
+}
+
+// Format display value
+function formatDisplay(value) {
+    if (value === 'Error' || value === 'Infinity') return value;
+    
+    const num = parseFloat(value);
+    if (isNaN(num)) return value;
+    
+    // Handle very large/small numbers
+    const absNum = Math.abs(num);
+    if (absNum > 1e4 || (absNum > 0 && absNum < 1e-6)) {
+        return num.toExponential(2);
+    }
+    
+    // Limit decimal places
+    const strValue = num.toString();
+    if (strValue.includes('.')) {
+        const [integer, decimal] = strValue.split('.');
+        if (decimal.length > 8) {
+            return num.toFixed(8).replace(/\.?0+$/, '');
+        }
+    }
+    
+    return strValue;
 }
 
 // Get operator symbol for display
@@ -113,44 +156,15 @@ function getOperatorSymbol(operation) {
         '/': '÷',
         '%': '%'
     };
-    return symbols[operation] || '';
+    return symbols[operation] || operation;
 }
-
-// DISABLED: Theme functions
-/*
-function createThemeToggle() {
-    const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'theme-toggle';
-    toggleBtn.innerHTML = calculator.theme === 'light' ? '🌙' : '☀️';
-    toggleBtn.title = 'Toggle theme';
-    toggleBtn.setAttribute('aria-label', 'Toggle theme');
-    
-    toggleBtn.addEventListener('click', toggleTheme);
-    
-    document.querySelector('.calculator').appendChild(toggleBtn);
-}
-
-function toggleTheme() {
-    calculator.theme = calculator.theme === 'light' ? 'dark' : 'light';
-    document.body.classList.toggle('dark-theme', calculator.theme === 'dark');
-    
-    // Update theme button icon
-    const themeBtn = document.querySelector('.theme-toggle');
-    if (themeBtn) {
-        themeBtn.innerHTML = calculator.theme === 'light' ? '🌙' : '☀️';
-    }
-    
-    saveToStorage();
-    
-    console.log(`🎨 Theme changed to: ${calculator.theme}`);
-}
-*/
 
 // Setup event listeners
 function setupEventListeners() {
     buttons.forEach(button => {
         button.addEventListener('click', () => {
             const buttonClass = button.classList[0];
+            const buttonText = button.textContent;
             
             if (calculator.errorState && buttonClass !== 'clear') {
                 clearCalculator();
@@ -158,18 +172,18 @@ function setupEventListeners() {
             
             switch(buttonClass) {
                 case 'number':
-                    inputNumber(button.textContent);
+                    inputNumber(buttonText);
                     break;
                 case 'operator':
-                    inputOperator(button.textContent);
+                    inputOperator(buttonText);
                     break;
                 case 'decimal':
                     inputDecimal();
                     break;
                 case 'clear':
-                    if (button.textContent === 'clr') {
+                    if (buttonText === 'clr') {
                         clearCalculator();
-                    } else if (button.textContent === 'DEL') {
+                    } else if (buttonText === 'DEL') {
                         deleteLastDigit();
                     }
                     break;
@@ -210,54 +224,81 @@ function setupKeyboardSupport() {
             deleteLastDigit();
         } else if (event.key === '%') {
             inputOperator('%');
-        } else if (event.key === 'm' || event.key === 'M') {
-            handleMemoryFunction();
         }
     });
 }
 
 // Input number
 function inputNumber(number) {
-    if (calculator.waitingForNewValue) {
+    if (calculator.errorState) {
+        clearCalculator();
+        return;
+    }
+    
+    if (calculator.waitingForNewValue || calculator.displayValue === '0') {
         calculator.displayValue = number;
         calculator.waitingForNewValue = false;
     } else {
-        calculator.displayValue = calculator.displayValue === '0' 
-            ? number 
-            : calculator.displayValue + number;
+        // Limit input length
+        if (calculator.displayValue.replace('.', '').length < 15) {
+            calculator.displayValue += number;
+        }
     }
-    
-    calculator.errorState = false;
     updateDisplay();
 }
 
-// Input operator
+// Input operator with BODMAS logic
 function inputOperator(op) {
     if (calculator.errorState) return;
     
-    const inputValue = parseFloat(calculator.displayValue);
+    const currentValue = parseFloat(calculator.displayValue);
     
     if (op === '%') {
-        calculator.displayValue = (inputValue / 100).toString();
+        // Handle percentage
+        if (calculator.expression.length > 0) {
+            // In context: 100 + 50% = 150
+            const lastNumber = calculator.expression[calculator.expression.length - 1];
+            if (typeof lastNumber === 'number') {
+                const percentValue = lastNumber * (currentValue / 100);
+                calculator.displayValue = percentValue.toString();
+                calculator.expression[calculator.expression.length - 1] = percentValue;
+            }
+        } else {
+            // Standalone: 50% = 0.5
+            calculator.displayValue = (currentValue / 100).toString();
+        }
         updateDisplay();
         return;
     }
     
-    if (calculator.previousValue === null) {
-        calculator.previousValue = inputValue;
-    } else if (calculator.operation) {
-        const result = performCalculation();
-        calculator.displayValue = String(result);
-        calculator.previousValue = result;
+    // Add current value to expression
+    if (!calculator.waitingForNewValue) {
+        calculator.expression.push(currentValue);
     }
     
+    // Handle operator precedence
+    if (calculator.expression.length >= 3) {
+        const lastOp = calculator.expression[calculator.expression.length - 2];
+        if (PRECEDENCE[op] <= PRECEDENCE[lastOp]) {
+            // Calculate higher precedence operations first
+            const result = evaluateExpression(calculator.expression);
+            calculator.expression = [result];
+            calculator.displayValue = result.toString();
+        }
+    }
+    
+    // Add operator to expression
+    calculator.expression.push(op);
     calculator.waitingForNewValue = true;
     calculator.operation = op;
+    
     updateDisplay();
 }
 
 // Input decimal
 function inputDecimal() {
+    if (calculator.errorState) return;
+    
     if (calculator.waitingForNewValue) {
         calculator.displayValue = '0.';
         calculator.waitingForNewValue = false;
@@ -274,6 +315,7 @@ function clearCalculator() {
     calculator.operation = null;
     calculator.waitingForNewValue = false;
     calculator.errorState = false;
+    calculator.expression = [];
     updateDisplay();
     console.log('🧹 Calculator cleared');
 }
@@ -290,100 +332,122 @@ function deleteLastDigit() {
     updateDisplay();
 }
 
-// Perform calculation
+// Evaluate expression with BODMAS
+function evaluateExpression(expression) {
+    if (expression.length === 0) return 0;
+    
+    // Convert to Reverse Polish Notation (RPN) for BODMAS
+    const output = [];
+    const operators = [];
+    
+    for (const token of expression) {
+        if (typeof token === 'number') {
+            output.push(token);
+        } else if (token in PRECEDENCE) {
+            while (operators.length > 0 && 
+                   PRECEDENCE[operators[operators.length - 1]] >= PRECEDENCE[token]) {
+                output.push(operators.pop());
+            }
+            operators.push(token);
+        }
+    }
+    
+    while (operators.length > 0) {
+        output.push(operators.pop());
+    }
+    
+    // Evaluate RPN
+    const stack = [];
+    for (const token of output) {
+        if (typeof token === 'number') {
+            stack.push(token);
+        } else {
+            const b = stack.pop();
+            const a = stack.pop();
+            
+            switch(token) {
+                case '+':
+                    stack.push(a + b);
+                    break;
+                case '-':
+                    stack.push(a - b);
+                    break;
+                case '×':
+                    stack.push(a * b);
+                    break;
+                case '/':
+                    if (b === 0) throw new Error('Division by zero');
+                    stack.push(a / b);
+                    break;
+            }
+        }
+    }
+    
+    return stack[0] || 0;
+}
+
+// Calculate final result with BODMAS
 function calculate() {
-    if (calculator.errorState || calculator.operation === null || calculator.previousValue === null) {
+    if (calculator.errorState || calculator.expression.length === 0) {
         return;
     }
     
     console.time('calculationTime');
     const startTime = performance.now();
     
-    const currentValue = parseFloat(calculator.displayValue);
-    let result;
-    
     try {
-        switch(calculator.operation) {
-            case '+':
-                result = calculator.previousValue + currentValue;
-                break;
-            case '-':
-                result = calculator.previousValue - currentValue;
-                break;
-            case '×':
-                result = calculator.previousValue * currentValue;
-                break;
-            case '/':
-                if (currentValue === 0) {
-                    throw new Error('Division by zero');
-                }
-                result = calculator.previousValue / currentValue;
-                break;
-            default:
-                return;
+        // Add current value to expression if not already added
+        if (!calculator.waitingForNewValue) {
+            const currentValue = parseFloat(calculator.displayValue);
+            calculator.expression.push(currentValue);
         }
+        
+        // Evaluate entire expression with BODMAS
+        const result = evaluateExpression(calculator.expression);
         
         if (!isFinite(result)) {
             throw new Error('Number overflow');
         }
         
-        result = Math.round(result * 100000000) / 100000000;
+        // Round to avoid floating point errors
+        const roundedResult = Math.round(result * 100000000) / 100000000;
         
-        calculator.displayValue = String(result);
+        calculator.displayValue = roundedResult.toString();
         calculator.previousValue = null;
         calculator.operation = null;
         calculator.waitingForNewValue = true;
+        calculator.expression = [roundedResult]; // Keep result for further operations
         
-        console.timeEnd('calculationTime');
         calculator.lastCalculationTime = performance.now() - startTime;
-        
+        console.timeEnd('calculationTime');
         console.log(`🧮 Calculation completed in ${calculator.lastCalculationTime.toFixed(2)}ms`);
         
     } catch (error) {
         calculator.displayValue = 'Error';
         calculator.errorState = true;
+        calculator.expression = [];
         console.warn(`⚠️ Calculation error: ${error.message}`);
     }
     
     updateDisplay();
 }
 
-// Perform individual calculation
-function performCalculation() {
-    const currentValue = parseFloat(calculator.displayValue);
-    
-    switch(calculator.operation) {
-        case '+':
-            return calculator.previousValue + currentValue;
-        case '-':
-            return calculator.previousValue - currentValue;
-        case '×':
-            return calculator.previousValue * currentValue;
-        case '/':
-            if (currentValue === 0) {
-                throw new Error('Division by zero');
-            }
-            return calculator.previousValue / currentValue;
-        default:
-            return currentValue;
-    }
-}
-
 // Memory function
 function handleMemoryFunction() {
     const currentValue = parseFloat(calculator.displayValue);
-    calculator.memory = currentValue;
-    saveToStorage();
-    
-    console.log(`💾 Memory stored: ${calculator.memory}`);
-    currentOperand.textContent = `M = ${calculator.memory}`;
-    setTimeout(() => updateDisplay(), 1000);
+    if (!isNaN(currentValue)) {
+        calculator.memory = currentValue;
+        saveToStorage();
+        console.log(`💾 Memory stored: ${calculator.memory}`);
+        currentOperand.textContent = `M = ${formatDisplay(calculator.memory.toString())}`;
+        setTimeout(() => updateDisplay(), 1500);
+    }
 }
 
-// Setup test functions in console
+// Setup test functions
 function setupTestFunctions() {
     window.runCalculatorTests = function() {
-        console.group('🧪 Calculator Test Suite');
+        console.group('🧪 Calculator Test Suite (BODMAS)');
         
         const tests = [
             { 
@@ -398,6 +462,19 @@ function setupTestFunctions() {
                 }
             },
             { 
+                name: 'BODMAS: 2 + 3 × 4 = 14', 
+                test: () => {
+                    clearCalculator();
+                    inputNumber('2');
+                    inputOperator('+');
+                    inputNumber('3');
+                    inputOperator('×');
+                    inputNumber('4');
+                    calculate();
+                    return calculator.displayValue === '14'; // Not 20!
+                }
+            },
+            { 
                 name: 'Division by Zero', 
                 test: () => {
                     clearCalculator();
@@ -409,28 +486,36 @@ function setupTestFunctions() {
                 }
             },
             { 
-                name: 'Percentage', 
+                name: 'Complex BODMAS: 10 - 2 × 3 + 4', 
                 test: () => {
                     clearCalculator();
-                    inputNumber('50');
+                    inputNumber('1');
+                    inputNumber('0');
+                    inputOperator('-');
+                    inputNumber('2');
+                    inputOperator('×');
+                    inputNumber('3');
+                    inputOperator('+');
+                    inputNumber('4');
+                    calculate();
+                    // 10 - (2×3) + 4 = 10 - 6 + 4 = 8
+                    return calculator.displayValue === '8';
+                }
+            },
+            { 
+                name: 'Percentage in context', 
+                test: () => {
+                    clearCalculator();
+                    inputNumber('1');
+                    inputNumber('0');
+                    inputNumber('0');
+                    inputOperator('+');
+                    inputNumber('5');
+                    inputNumber('0');
                     inputOperator('%');
-                    return calculator.displayValue === '0.5';
-                }
-            },
-            { 
-                name: 'Clear Function', 
-                test: () => {
-                    clearCalculator();
-                    return calculator.displayValue === '0';
-                }
-            },
-            { 
-                name: 'Memory Function', 
-                test: () => {
-                    clearCalculator();
-                    inputNumber('42');
-                    handleMemoryFunction();
-                    return calculator.memory === 42;
+                    calculate();
+                    // 100 + 50% of 100 = 150
+                    return calculator.displayValue === '150';
                 }
             }
         ];
@@ -445,7 +530,7 @@ function setupTestFunctions() {
                     console.log(`✅ ${index + 1}. ${test.name}`);
                     passed++;
                 } else {
-                    console.log(`❌ ${index + 1}. ${test.name} - Failed`);
+                    console.log(`❌ ${index + 1}. ${test.name} - Got ${calculator.displayValue}`);
                     failed++;
                 }
             } catch (error) {
@@ -464,7 +549,7 @@ function setupTestFunctions() {
         console.group('📊 Calculator State');
         console.table({
             'Display Value': calculator.displayValue,
-            'Previous Value': calculator.previousValue,
+            'Expression': calculator.expression.join(' '),
             'Operation': calculator.operation,
             'Waiting for Input': calculator.waitingForNewValue,
             'Error State': calculator.errorState,
@@ -481,7 +566,7 @@ function setupTestFunctions() {
     };
     
     console.log('🔧 Test functions available:');
-    console.log('- runCalculatorTests(): Run all tests');
+    console.log('- runCalculatorTests(): Run BODMAS tests');
     console.log('- showCalculatorState(): Show current state');
     console.log('- clearCalculatorMemory(): Clear memory');
 }
