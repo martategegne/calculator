@@ -88,7 +88,18 @@ function loadFromStorage() {
     }
 }
 
-
+//save it to the local storage
+// saveToStorage() 
+function saveToStorage() {
+    if (!isLocalStorageAvailable()) return;
+    
+    try {
+        localStorage.setItem('calculator_memory', calculator.memory.toString());
+        console.log('💾 Saved memory:', calculator.memory);
+    } catch (error) {
+        console.warn('⚠️ Error saving to localStorage:', error);
+    }
+}
 
 // Update display
 function updateDisplay() {
@@ -177,6 +188,7 @@ function setupEventListeners() {
                     calculate();
                     break;
             }
+
             
             // Button animation
             button.style.transform = 'scale(0.95)';
