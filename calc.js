@@ -250,10 +250,17 @@ function inputOperator(op) {
     const inputValue = parseFloat(calculator.displayValue);
     
     if (op === '%') {
+    if (calculator.operation && calculator.previousValue !== null) {
+        // For operations like: 100 + 50%
+        const percentValue = calculator.previousValue * (inputValue / 100);
+        calculator.displayValue = percentValue.toString();
+    } else {
+        // Standalone percentage: 50% → 0.5
         calculator.displayValue = (inputValue / 100).toString();
-        updateDisplay();
-        return;
     }
+    updateDisplay();
+    return;
+}g
     
     if (calculator.previousValue === null) {
         calculator.previousValue = inputValue;
