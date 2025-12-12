@@ -230,6 +230,9 @@ function setupKeyboardSupport() {
 
 // Input number
 function inputNumber(number) {
+    if (calculator.errorState) {
+        clearCalculator();
+    }
     if (calculator.waitingForNewValue) {
         calculator.displayValue = number;
         calculator.waitingForNewValue = false;
