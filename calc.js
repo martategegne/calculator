@@ -263,7 +263,7 @@ function inputOperator(op) {
     }
     updateDisplay();
     return;
-}g
+}
     
     if (calculator.previousValue === null) {
         calculator.previousValue = inputValue;
